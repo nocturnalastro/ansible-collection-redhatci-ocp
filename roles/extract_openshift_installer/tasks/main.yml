@@ -3,7 +3,7 @@
   ansible.builtin.file:
     path: "{{ extract_dest_path }}"
     state: directory
-    mode: 0755
+    mode: "0755"
     recurse: true
 
 - name: Create pull_secret_file
@@ -12,8 +12,8 @@
     dest: "{{ pull_secret_file }}"
     mode: "0600"
 
-- name: Extract openshift_installer
-  ansible.builtin.shell:
+- name: Extract openshift_installer # noqa no-changed-when
+  ansible.builtin.command:
     cmd: >
       oc adm
       -a {{ pull_secret_file }}
@@ -23,10 +23,11 @@
       --to={{ extract_dest_path }}
 
 - name: Check extracted installer has agent subcommand
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "{{ openshift_installer_path }} agent --help"
   register: res
   failed_when: false
+  changed_when: false
 
 - name: Check agent sub-commmand output
   ansible.builtin.fail:
