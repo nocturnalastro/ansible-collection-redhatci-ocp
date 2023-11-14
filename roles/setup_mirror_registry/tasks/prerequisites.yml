@@ -1,6 +1,6 @@
 ---
 - name: Make sure needed packages are installed
-  package:
+  ansible.builtin.package:
     name: "{{ required_packages }}"
     state: present
   become: true
@@ -10,24 +10,25 @@
 - name: Check cert exists
   block:
     - name: Get cert stat
-      stat:
+      ansible.builtin.stat:
         path: "{{ registry_dir_cert }}/{{ cert_file_prefix }}.crt"
       register: cert_file
+
     - name: "Fail: Certificate not found"
-      fail:
+      ansible.builtin.fail:
         msg: "Cert file {{ registry_dir_cert }}/{{ cert_file_prefix }}.crt missing"
-      when: cert_file.stat.exists | bool == False
+      when: cert_file.stat.exists | bool
 
 - name: Create config_file_path dir
-  file:
+  ansible.builtin.file:
     path: "{{ config_file_path }}"
     owner: "{{ file_owner }}"
     group: "{{ file_group }}"
-    mode: 0775
+    mode: "0775"
     state: directory
 
 - name: Copy pull_secret
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_pull_secret_path }}"
     dest: "{{ config_file_path }}/{{ pull_secret_file_name }}"
-    mode: 0644
+    mode: "0644"
