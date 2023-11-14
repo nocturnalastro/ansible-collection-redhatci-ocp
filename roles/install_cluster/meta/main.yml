@@ -1,2 +1,2 @@
-dependencies:
+dependencies: # noqa: meta-no-info
   - role: validate_inventory
