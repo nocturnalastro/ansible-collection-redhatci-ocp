@@ -2,33 +2,33 @@
 # tasks file for manifests
 
 - name: Fail if manifest is not a mapping
-  fail:
+  ansible.builtin.fail:
     msg: "Manifest item must be a dict with either template or file as the key"
   when: item is not mapping and (("template" in item) or ("file" in item))
 
 - name: Load manifest
-  set_fact:
+  ansible.builtin.set_fact:
     manifest_content: "{{ lookup('template', item.template) }}"
     manifest_name: "{{ item.template.rsplit('.j2', 1)[0] | basename }}"
   when: ("template" in item)
 
 
 - name: Load manifest
-  set_fact:
+  ansible.builtin.set_fact:
     manifest_content: "{{ lookup('file', item.file) }}"
     manifest_name: "{{ item.file | basename }}"
   when: ("file" in item)
 
-- debug: # noqa unnamed-task
+- ansible.builtin.debug: # noqa unnamed-task
     var: manifest
     verbosity: 1
 
 - name: Apply manifest
-  uri:
+  ansible.builtin.uri:
     url: "{{ URL_ASSISTED_INSTALLER_CLUSTERS }}/{{ cluster_id }}/manifests"
     method: POST
     status_code: [201]
-    return_content: True
+    return_content: true
     body_format: json
     body:
       {
@@ -38,6 +38,6 @@
       }
   register: http_reply
 
-- debug: # noqa unnamed-task
+- ansible.builtin.debug: # noqa unnamed-task
     var: http_reply
     verbosity: 1

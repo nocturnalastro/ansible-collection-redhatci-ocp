@@ -25,17 +25,17 @@
     path: "{{ cert_dir }}"
     owner: "{{ file_owner }}"
     group: "{{ file_group }}"
-    mode: 0770
+    mode: "0770"
     state: directory
     recurse: true
   become: true
 
 - name: Generate an OpenSSL private key
-  openssl_privatekey:
+  openssl_privatekey: # noqa: fqcn
     path: "{{ privatekey_path }}"
 
 - name: Generate an OpenSSL CSR
-  openssl_csr:
+  openssl_csr: # noqa: fqcn
     path: "{{ csr_path }}"
     privatekey_path: "{{ privatekey_path }}"
     common_name: "{{ cert_common_name }}"
@@ -44,24 +44,24 @@
     locality_name: "{{ cert_locality }}"
     organization_name: "{{ cert_organization }}"
     organizational_unit_name: "{{ cert_organizational_unit }}"
-    basic_constraints_critical: yes
-    create_subject_key_identifier: yes
+    basic_constraints_critical: true
+    create_subject_key_identifier: true
     basic_constraints: ["CA:TRUE"]
 
 - name: Generate a selfsigned OpenSSL CA Certificate
-  openssl_certificate:
+  openssl_certificate: # noqa: fqcn
     path: "{{ ownca_path }}"
     privatekey_path: "{{ privatekey_path }}"
     csr_path: "{{ csr_path }}"
     provider: selfsigned
 
 - name: Generate an ownca OpenSSL Certificate
-  openssl_certificate:
+  openssl_certificate: # noqa: fqcn
     path: "{{ cert_path }}"
     ownca_privatekey_path: "{{ privatekey_path }}"
     csr_path: "{{ csr_path }}"
     ownca_path: "{{ ownca_path }}"
-    ownca_create_authority_key_identifier: yes
+    ownca_create_authority_key_identifier: true
     provider: ownca
 
 - name: Set cert in CA trust
@@ -74,13 +74,14 @@
         remote_src: true
         owner: "{{ file_owner }}"
         group: "{{ file_group }}"
-        mode: 0660
+        mode: "0660"
         force: true
         backup: true
 
     - name: Update the CA trust files
       ansible.builtin.command:
         cmd: update-ca-trust extract
+      changed_when: false
 
 - name: Fetch the domain cert from the registry host
   ansible.builtin.fetch:

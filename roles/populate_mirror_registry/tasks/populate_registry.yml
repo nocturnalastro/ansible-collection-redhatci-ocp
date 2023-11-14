@@ -11,17 +11,17 @@
         state: present
 
     - name: Create podman auth dir
-      file:
+      ansible.builtin.file:
         path: "{{ config_file_path }}/containers/"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Copy pull_secrets file.
-      copy:
+      ansible.builtin.copy:
         src: "{{ config_file_path }}/{{ pull_secret_file_name }}"
         dest: "{{ config_file_path }}/containers/auth.json"
-        mode: 0644
-        remote_src: yes
+        mode: "0644"
+        remote_src: true
 
     - name: Podman login to remote registry
       containers.podman.podman_login_info:
@@ -30,31 +30,34 @@
         XDG_RUNTIME_DIR: "{{ config_file_path }}"
 
     - name: Mirror remote ocpmetal image registry to local
-      command:
+      ansible.builtin.command:
         cmd: >
           "{{ binaries_tool_path }}"/oc image mirror
             -a "{{ config_file_path }}/{{ pull_secret_file_name }}"
             {{ item.remote }}
             {{ item.local }}:{{ item.local_tag }}
+      changed_when: false
       loop: "{{ ocpmetal_images }}"
 
     - name: Mirror release image to local (x86_64)
-      command:
+      ansible.builtin.command:
         cmd: >
           "{{ binaries_tool_path }}"/oc adm release mirror
             -a "{{ config_file_path }}/{{ pull_secret_file_name }}"
             --from="{{ release_image_item.remote | quote }}"
             --to-release-image="{{ release_image_item.local | quote }}:{{ release_image_item.local_tag | quote }}"
             --to="{{ release_image_item.local | quote }}"
+      changed_when: false
 
     - name: Mirror release image to local (arm64)
-      command:
+      ansible.builtin.command:
         cmd: >
           "{{ binaries_tool_path }}"/oc adm release mirror
             -a "{{ config_file_path }}/{{ pull_secret_file_name }}"
             --from="{{ release_image_item_arm.remote | quote }}"
             --to-release-image="{{ release_image_item_arm.local | quote }}:{{ release_image_item_arm.local_tag | quote }}"
             --to="{{ release_image_item_arm.local | quote }}"
+      changed_when: false
       when: arm_release_image_key in image_hashes
 
 - name: Populate Mirror  with operators
@@ -74,6 +77,7 @@
       ansible.builtin.file:
         path: "{{ temp_dir.path }}/configs"
         state: directory
+        mode: "0755"
 
     # I found that the list of packages was so large that pulling them
     # back into ansible for processing was not possible via normal means
@@ -82,50 +86,56 @@
       ansible.builtin.template:
         src: filter.sh.j2
         dest: "{{ temp_dir.path }}/filter.sh"
+        mode: "0755"
 
     - name: Runfilter
-      command:
+      ansible.builtin.command:
         cmd: "bash {{ temp_dir.path }}/filter.sh"
       environment:
         XDG_RUNTIME_DIR: "{{ config_file_path }}"
+      changed_when: false
 
     - name: Build pruned OLM index
-      command:
+      ansible.builtin.command:
         cmd: >
           {{ downloads_path }}/{{ openshift_full_version }}/opm
             generate dockerfile {{ temp_dir.path }}/configs
       environment:
         XDG_RUNTIME_DIR: "{{ config_file_path }}"
+      changed_when: false
 
     - name: Build pruned index
-      command:
+      ansible.builtin.command:
         cmd: >
           podman build
             -t  {{ olm_index_item.local }}:{{ olm_index_item.local_tag }}
             -f configs.Dockerfile
             .
         chdir: "{{ temp_dir.path }}"
+      changed_when: false
 
     - name: "Validate pruned index"
-      command:
+      ansible.builtin.command:
         cmd: >
           {{ downloads_path }}/{{ openshift_full_version }}/opm
             validate configs/
-      args:
         chdir: "{{ temp_dir.path }}"
+      changed_when: false
 
     - name: Push pruned index to local registry
-      command:
+      ansible.builtin.command:
         cmd: >
           podman push
             --tls-verify=false
             {{ olm_index_item.local }}:{{ olm_index_item.local_tag }}
             --authfile "{{ config_file_path }}/{{ pull_secret_file_name }}"
+      changed_when: false
 
     - name: Mirror Catalog to local registry
-      command:
+      ansible.builtin.command:
         cmd: >
           {{ binaries_tool_path }}/oc adm catalog mirror
             {{ olm_index_item.local }}:{{ olm_index_item.local_tag }}
             {{ olm_item.local }}:{{ olm_item.local_tag }}
             --registry-config="{{ config_file_path }}/{{ pull_secret_file_name }}"
+      changed_when: false

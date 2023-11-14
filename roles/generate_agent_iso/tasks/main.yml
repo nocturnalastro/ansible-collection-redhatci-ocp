@@ -2,13 +2,13 @@
   ansible.builtin.file:
     path: "{{ config_file_path }}/containers/"
     state: directory
-    mode: 0755
+    mode: "0755"
     recurse: true
 
 - name: Generate an ISO and print message if there is a failure
   block:
-    - name: Generate ISO
-      ansible.builtin.shell:
+    - name: Generate ISO # noqa: no-changed-when
+      ansible.builtin.command:
         cmd: "{{ agent_based_installer_path }} --log-level=debug agent create image"
         chdir: "{{ manifests_dir }}"
       environment:
@@ -16,7 +16,7 @@
       register: gen_iso
   rescue:
     - name: Print message about nmstate package missing
-      fail:
+      ansible.builtin.fail:
         msg: "nmstate package missing in the bastion. See Dependencies section in README.md for more details."
       when:
         - gen_iso.stderr is defined
@@ -36,4 +36,4 @@
       ansible.builtin.copy:
         src: "{{ manifests_dir }}/agent.{{ arch }}.iso"
         dest: "{{ download_dest_path }}/{{ download_agent_dest_file }}"
-        mode: 0644
+        mode: "0644"

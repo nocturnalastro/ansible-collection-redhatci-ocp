@@ -6,7 +6,7 @@ URL_ASSISTED_INSTALLER_CLUSTER: "{{ ASSISTED_INSTALLER_BASE_URL }}/clusters/{{ a
 URL_ASSISTED_INSTALLER_INFRA_ENV: "{{ ASSISTED_INSTALLER_BASE_URL }}/infra-envs/{{ infra_env_id }}"
 
 day2_states:
-  -  insufficient
+  - insufficient
   - "{{ day2_host_found }}"
   - installing
   - installing-in-progress
