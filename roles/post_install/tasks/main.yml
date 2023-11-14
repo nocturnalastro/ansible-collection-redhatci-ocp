@@ -15,21 +15,24 @@
   block:
       # The retries is becuase sometimes (although rarely) the cluster isn't quite ready for requests
     - name: Perform simple connectivity check with oc (wait up to 5 mins)
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: "oc get clusterversion"
       register: res
       until: res.rc == 0
       retries: 5
       delay: 60
+      changed_when: false
 
     - name: Check status of cluster operators
       block:
         - name: Wait up to 20 mins for cluster to become functional
-          ansible.builtin.shell:
+          ansible.builtin.command:
             cmd: oc wait clusteroperators --all --for=condition=Available --timeout=20m
+          changed_when: false
       rescue:
         - name: Getting more info for failure message
-          ansible.builtin.shell: oc get clusteroperators
+          ansible.builtin.command: oc get clusteroperators
+          changed_when: false
           register: co_result
 
         - name: Present failing clusteroperators command output
@@ -52,9 +55,10 @@
   ansible.builtin.copy:
     content: "{{ credentials | to_nice_json }}"
     dest: "{{ dest_dir }}/{{ kubeadmin_vault_name }}"
-    mode: 0600
+    mode: "0600"
 
 - name: Save credentials to vault
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "ansible-vault encrypt --vault-password-file {{ kubeadmin_vault_password_file_path }} {{ dest_dir }}/{{ kubeadmin_vault_name }}"
+  changed_when: false
   when: (kubeadmin_vault_password_file_path is defined) and (kubeadmin_vault_password_file_path is file)

@@ -11,7 +11,8 @@
     credentials: "{{ credentials_reply.json }}"
 
 - name: Login to add token to kubeconfig
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "oc login -u {{ credentials.username }} -p '{{ credentials.password }}'"
+  changed_when: false
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
