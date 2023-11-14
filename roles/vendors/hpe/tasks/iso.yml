@@ -29,7 +29,7 @@
       register: result
 
     - name: Get blocking virtual_media
-      ansible.builtin.set_fact:
+      ansible.builtin.set_fact: # noqa: jinja[spacing]
         blocking_virtual_media: "{{ result.redfish_facts.virtual_media.entries
             | flatten(levels=2)
             | selectattr('ConnectedVia', 'defined') | list
